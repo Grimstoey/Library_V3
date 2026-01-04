@@ -1,14 +1,15 @@
 import { prisma } from "../lib/prisma";
+import { BorrowPage } from "../models/BorrowPage";
 
 export const borrowRepository = {
   // หนังสือที่ครบกำหนดคืนในวันที่กำหนด
-  async getBooksDueOnDate(date: Date) {
+  async getBooksDueOnDate(date: Date, pageSize: number, pageNo: number) {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    return prisma.borrowItem.findMany({
+    const borrowItems = await prisma.borrowItem.findMany({
       where: {
         dueDate: { gte: startOfDay, lte: endOfDay },
         returnedAt: null,
@@ -17,7 +18,20 @@ export const borrowRepository = {
         book: { include: { author: true } },
         borrow: { include: { member: true } },
       },
+      skip: pageSize * (pageNo - 1),
+      take: pageSize,
     });
+
+    const count = await prisma.borrowItem.count({
+      where: {
+        dueDate: { gte: startOfDay, lte: endOfDay },
+        returnedAt: null,
+      },
+      skip: pageSize * (pageNo - 1),
+      take: pageSize,
+    })
+
+    return { borrowItems, count } as BorrowPage
   },
 
   // หนังสือที่ยังไม่ได้คืน

@@ -9,7 +9,7 @@ export const memberService = {
     return memberRepository.getByCode(code);
   },
   
-  async getAllMembers() {
-    return memberRepository.getAll();
+  async getAllMembers(pageSize : number = 10 , pageNo : number = 1) {
+    return memberRepository.getAll(pageSize, pageNo);
   },
 };
